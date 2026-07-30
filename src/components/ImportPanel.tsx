@@ -94,11 +94,16 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
             reconstructed.warnings.length > 0
               ? ` Notes: ${reconstructed.warnings.slice(0, 2).join(" ")}`
               : "";
-          onImport(
-            reconstructed.recipe,
-            `AI reconstructed this recipe from locally extracted text. It is a close approximation—review quantities and steps, then use Edit for any corrections.${uncertainty}`
+          const notice =
+            reconstructed.mode === "approximated"
+              ? `This image did not contain a complete recipe, so AI created a close culinary approximation from the visible evidence. Review every quantity and step, then use Edit for corrections.${uncertainty}`
+              : `AI reconstructed this recipe from locally extracted text. It is a close approximation—review quantities and steps, then use Edit for any corrections.${uncertainty}`;
+          onImport(reconstructed.recipe, notice);
+          setStatus(
+            reconstructed.mode === "approximated"
+              ? "Culinary approximation ready"
+              : "AI-assisted reconstruction ready"
           );
-          setStatus("AI-assisted approximation ready");
           return;
         } catch {
           // Keep the scan useful if Workers AI is temporarily unavailable.
