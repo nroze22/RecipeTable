@@ -44,14 +44,6 @@ export function ShareRecipeDialog({ recipe, onClose }: ShareRecipeDialogProps) {
       .then((next) => {
         if (!active) return;
         setUrl(next);
-        window.setTimeout(() => {
-          if (!canvas.current) return;
-          try {
-            drawQr(canvas.current, next);
-          } catch {
-            setQrAvailable(false);
-          }
-        }, 0);
       })
       .catch(() => {
         if (active) setError("A private share link could not be created for this recipe.");
@@ -60,6 +52,28 @@ export function ShareRecipeDialog({ recipe, onClose }: ShareRecipeDialogProps) {
       active = false;
     };
   }, [recipe]);
+
+  useEffect(() => {
+    if (!url || !canvas.current) return;
+    try {
+      drawQr(canvas.current, url);
+    } catch {
+      setQrAvailable(false);
+    }
+  }, [url]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [onClose]);
 
   async function copyLink() {
     try {
