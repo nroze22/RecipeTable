@@ -187,6 +187,10 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
   async function runSampleDemo() {
     if (busy) return;
     resetFeedback();
+    document.querySelector(".import-card")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
     setDemoRunning(true);
     setBusy(true);
     const moments = [
@@ -339,8 +343,8 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
             value={text}
             onChange={(event) => setText(event.target.value)}
           />
-          <button className="primary-button full" type="submit">
-            Make table
+          <button className="primary-button full" type="submit" disabled={busy}>
+            {busy ? status || "Building table…" : "Make table"}
             <Icon name="arrow" size={18} />
           </button>
         </form>
