@@ -1,4 +1,4 @@
-import { compileIngredientLinks } from "./ai";
+import { compileIngredientLinks, reconstructRecipeFromOcr } from "./ai";
 import { extractRecipeFromHtml } from "./extract";
 import {
   fetchRecipePage,
@@ -122,6 +122,26 @@ async function handleExtract(
   });
 }
 
+async function handleOcrReconstruct(
+  request: Request,
+  env: Env,
+  origin: string
+): Promise<Response> {
+  const body = await readJson(request);
+  try {
+    const reconstruction = await reconstructRecipeFromOcr(env, body);
+    return json(reconstruction, 200, origin);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "The OCR cleanup pass failed.";
+    return json(
+      { error: { code: "OCR_RECONSTRUCTION_FAILED", message } },
+      message.includes("not configured") ? 503 : 422,
+      origin
+    );
+  }
+}
+
 async function handleCompile(
   request: Request,
   env: Env,
@@ -173,7 +193,7 @@ export default {
           {
             ok: true,
             service: "RecipeTable",
-            endpoints: ["POST /extract", "POST /compile"]
+            endpoints: ["POST /extract", "POST /ocr-reconstruct", "POST /compile"]
           },
           200,
           origin
@@ -181,6 +201,9 @@ export default {
       }
       if (request.method === "POST" && url.pathname === "/extract") {
         return await handleExtract(request, origin, context);
+      }
+      if (request.method === "POST" && url.pathname === "/ocr-reconstruct") {
+        return await handleOcrReconstruct(request, env, origin);
       }
       if (request.method === "POST" && url.pathname === "/compile") {
         return await handleCompile(request, env, origin);
