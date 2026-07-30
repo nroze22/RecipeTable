@@ -32,7 +32,21 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [demoRunning, setDemoRunning] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  const pipelinePhases = demoRunning
+    ? ["Reading source", "Finding ingredients", "Mapping cooking logic", "Rendering your table"]
+    : mode === "image"
+      ? ["Preparing image", "Reading locally with OCR", "AI reconstruction", "Building visual flow"]
+      : mode === "url"
+        ? ["Validating link", "Finding recipe card", "Normalizing recipe", "Building visual flow"]
+        : ["Reading text", "Structuring recipe", "Mapping ingredients", "Building visual flow"];
+
+  const pipelineIndex =
+    progress >= 0.9 ? 3 :
+    progress >= 0.58 ? 2 :
+    progress >= 0.2 ? 1 : 0;
 
   function resetFeedback() {
     setError("");
@@ -58,14 +72,25 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
     }
 
     setBusy(true);
+    setProgress(0.24);
     setStatus("Finding the recipe card");
+    const normalizationTimer = window.setTimeout(() => {
+      setProgress(0.62);
+      setStatus("Normalizing ingredients and directions");
+    }, 700);
     try {
       const recipe = await extractRecipeUrl(parsed.toString());
+      window.clearTimeout(normalizationTimer);
+      setProgress(0.94);
+      setStatus("Building the visual cooking flow");
+      await wait(260);
       onImport(recipe);
+      setProgress(1);
       setStatus("Recipe ready");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "That recipe could not be imported.");
     } finally {
+      window.clearTimeout(normalizationTimer);
       setBusy(false);
     }
   }
@@ -87,7 +112,8 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
       });
 
       if (isWorkerConfigured()) {
-        setStatus("Cleaning up the scan with AI");
+        setProgress(0.7);
+        setStatus("AI is reconstructing the recipe");
         try {
           const reconstructed = await reconstructRecipeOcr(recognized, file.name);
           const uncertainty =
@@ -98,7 +124,11 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
             reconstructed.mode === "approximated"
               ? `This image did not contain a complete recipe, so AI created a close culinary approximation from the visible evidence. Review every quantity and step, then use Edit for corrections.${uncertainty}`
               : `AI reconstructed this recipe from locally extracted text. It is a close approximation—review quantities and steps, then use Edit for any corrections.${uncertainty}`;
+          setProgress(0.94);
+          setStatus("Building the visual cooking flow");
+          await wait(280);
           onImport(reconstructed.recipe, notice, true);
+          setProgress(1);
           setStatus(
             reconstructed.mode === "approximated"
               ? "Culinary approximation ready"
@@ -115,10 +145,14 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
           "The scan was too incomplete to structure locally, and AI cleanup was unavailable. Try a tighter, brighter crop."
         );
       }
+      setProgress(0.94);
+      setStatus("Building the local visual flow");
+      await wait(240);
       onImport(
         localRecipe,
         "Tesseract created a local approximation. Review quantities and steps, then use Edit for any corrections."
       );
+      setProgress(1);
       setStatus("Local approximation ready");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The image could not be read.");
@@ -127,15 +161,55 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
     }
   }
 
-  function importText(event: FormEvent) {
+  async function importText(event: FormEvent) {
     event.preventDefault();
     resetFeedback();
     if (text.trim().length < 30) {
       setError("Paste the recipe title, ingredients, and directions first.");
       return;
     }
+    setBusy(true);
+    setProgress(0.28);
+    setStatus("Structuring ingredients and directions");
+    await wait(220);
+    setProgress(0.66);
+    setStatus("Mapping ingredients to cooking stages");
+    await wait(220);
+    setProgress(0.94);
+    setStatus("Building the visual cooking flow");
+    await wait(220);
     onImport(parseRecipeText(text, { siteName: "Pasted recipe" }));
+    setProgress(1);
     setStatus("Recipe ready");
+    setBusy(false);
+  }
+
+  async function runSampleDemo() {
+    if (busy) return;
+    resetFeedback();
+    setDemoRunning(true);
+    setBusy(true);
+    const moments = [
+      ["Reading a messy recipe source", 0.12],
+      ["Separating ingredients from the noise", 0.34],
+      ["Mapping ingredients to cooking stages", 0.65],
+      ["Rendering the visual recipe", 0.94]
+    ] as const;
+
+    for (const [message, nextProgress] of moments) {
+      setStatus(message);
+      setProgress(nextProgress);
+      await wait(430);
+    }
+
+    onImport(
+      SAMPLE_RECIPE,
+      "Demo complete—RecipeTable extracted the recipe and compiled its full cooking flow."
+    );
+    setProgress(1);
+    setStatus("Visual recipe ready");
+    setBusy(false);
+    setDemoRunning(false);
   }
 
   function acceptFile(next: File | undefined) {
@@ -160,9 +234,10 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
         <button
           className="sample-button"
           type="button"
-          onClick={() => onImport(SAMPLE_RECIPE)}
+          onClick={runSampleDemo}
+          disabled={busy}
         >
-          Try the sample
+          {demoRunning ? "Building the demo…" : "Run the 15-second demo"}
           <Icon name="arrow" size={17} />
         </button>
       </div>
@@ -271,10 +346,34 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
         </form>
       )}
 
-      {(busy || progress > 0) && (
-        <div className="progress-track" aria-hidden="true">
-          <span style={{ width: `${Math.max(progress * 100, busy ? 12 : 0)}%` }} />
-        </div>
+      {busy && (
+        <section className="intelligence-pipeline" aria-label="Recipe processing progress">
+          <header>
+            <span className="pipeline-orb"><Icon name="sparkle" size={17} /></span>
+            <div>
+              <strong>{status || "Understanding your recipe"}</strong>
+              <span>RecipeTable intelligence pipeline</span>
+            </div>
+            <b>{Math.round(Math.max(progress, 0.08) * 100)}%</b>
+          </header>
+          <ol>
+            {pipelinePhases.map((phase, index) => (
+              <li
+                key={phase}
+                className={
+                  index < pipelineIndex ? "complete" :
+                  index === pipelineIndex ? "active" : ""
+                }
+              >
+                <span>{index < pipelineIndex ? <Icon name="check" size={13} /> : index + 1}</span>
+                {phase}
+              </li>
+            ))}
+          </ol>
+          <div className="pipeline-track" aria-hidden="true">
+            <span style={{ width: `${Math.max(progress * 100, 8)}%` }} />
+          </div>
+        </section>
       )}
       <div className="import-feedback" aria-live="polite">
         {error && <p className="error-message">{error}</p>}
@@ -288,3 +387,7 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
   );
 }
 
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
