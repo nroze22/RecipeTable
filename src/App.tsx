@@ -6,9 +6,12 @@ import { ImportPanel } from "./components/ImportPanel";
 import { RecipeEditor } from "./components/RecipeEditor";
 import { RecipeFlow } from "./components/RecipeFlow";
 import { RecipeLibrary } from "./components/RecipeLibrary";
+import { RecipeReveal } from "./components/RecipeReveal";
+import { ShareRecipeDialog } from "./components/ShareRecipeDialog";
 import { SAMPLE_RECIPE } from "./data/sample";
 import { copyRecipeTable, downloadRecipePng } from "./lib/exportRecipe";
 import { compileRecipe } from "./lib/recipeGraph";
+import { clearSharedRecipeHash, readSharedRecipe } from "./lib/shareRecipe";
 import {
   deleteRecentRecipe,
   loadRecentRecipes,
@@ -31,14 +34,39 @@ export default function App() {
   const [refineMessage, setRefineMessage] = useState("");
   const [copied, setCopied] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [revealingRecipe, setRevealingRecipe] = useState<Recipe | null>(null);
+  const [pageMessage, setPageMessage] = useState("");
   const resultRef = useRef<HTMLElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const recipeGenerationRef = useRef(0);
+  const revealGenerationRef = useRef(0);
+  const sharedRecipeLoadedRef = useRef(false);
 
   const compiled = useMemo(
     () => compileRecipe(recipe ?? SAMPLE_RECIPE, linkPlan),
     [recipe, linkPlan]
   );
+
+  useEffect(() => {
+    if (sharedRecipeLoadedRef.current) return;
+    sharedRecipeLoadedRef.current = true;
+    void readSharedRecipe()
+      .then((shared) => {
+        if (!shared) return;
+        acceptRecipe(
+          shared,
+          "Opened from a private RecipeTable link. The recipe was carried inside the URL—nothing was fetched from a recipe database."
+        );
+      })
+      .catch((reason) => {
+        setPageMessage(
+          reason instanceof Error ? reason.message : "That shared recipe link could not be opened."
+        );
+      });
+    // Shared links are intentionally consumed once when the app starts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (
@@ -59,7 +87,16 @@ export default function App() {
     optimizeFlow = false
   ) {
     const generation = ++recipeGenerationRef.current;
+    const revealGeneration = ++revealGenerationRef.current;
     setRecipe(next);
+    setRevealingRecipe(next);
+    setSharing(false);
+    setPageMessage("");
+    window.setTimeout(() => {
+      if (revealGenerationRef.current === revealGeneration) {
+        setRevealingRecipe(null);
+      }
+    }, 2800);
     setLinkPlan([]);
     setRefineMessage(notice || "");
     saveRecentRecipe(next);
@@ -97,7 +134,12 @@ export default function App() {
 
   function startNewRecipe() {
     recipeGenerationRef.current += 1;
+    revealGenerationRef.current += 1;
+    clearSharedRecipeHash();
     setRecipe(null);
+    setRevealingRecipe(null);
+    setSharing(false);
+    setPageMessage("");
     setLinkPlan([]);
     setRefineMessage("");
     setEditing(false);
@@ -113,7 +155,10 @@ export default function App() {
 
   function openSavedRecipe(saved: Recipe) {
     recipeGenerationRef.current += 1;
+    revealGenerationRef.current += 1;
     setRecipe(saved);
+    setRevealingRecipe(null);
+    setSharing(false);
     setLinkPlan([]);
     setRefineMessage("");
     setEditing(false);
@@ -259,6 +304,9 @@ export default function App() {
         </section>
 
         <ImportPanel key={importKey} onImport={acceptRecipe} />
+        {pageMessage && (
+          <p className="page-message" role="alert">{pageMessage}</p>
+        )}
 
         {recipe && (
         <section className="result-section" ref={resultRef} aria-labelledby="result-title">
@@ -294,6 +342,14 @@ export default function App() {
               >
                 <Icon name="download" size={17} />
                 {exporting ? "Exporting…" : "PNG"}
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => setSharing(true)}
+              >
+                <Icon name="share" size={17} />
+                Share
               </button>
               <button
                 className="primary-button"
@@ -398,6 +454,18 @@ export default function App() {
         />
       )}
       {cooking && <CookingMode compiled={compiled} onClose={() => setCooking(false)} />}
+      {sharing && recipe && (
+        <ShareRecipeDialog recipe={recipe} onClose={() => setSharing(false)} />
+      )}
+      {revealingRecipe && (
+        <RecipeReveal
+          recipe={revealingRecipe}
+          onSkip={() => {
+            revealGenerationRef.current += 1;
+            setRevealingRecipe(null);
+          }}
+        />
+      )}
     </div>
   );
 }
