@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Recipe } from "../types";
 import { Icon } from "./Icon";
 
@@ -21,7 +22,7 @@ export function RecipeReveal({ recipe, onSkip }: RecipeRevealProps) {
             <i />
             <strong>{recipe.title}</strong>
             {ingredients.map((ingredient, index) => (
-              <span key={ingredient.id} style={{ "--line": index } as React.CSSProperties}>
+              <span key={ingredient.id} style={{ "--line": index } as CSSProperties}>
                 {ingredient.raw}
               </span>
             ))}
