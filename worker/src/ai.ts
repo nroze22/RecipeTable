@@ -14,6 +14,7 @@ export interface OcrReconstructionRequest {
 }
 
 export interface OcrReconstruction {
+  mode: "reconstructed" | "approximated";
   recipe: {
     title: string;
     description?: string;
@@ -237,7 +238,9 @@ function parseOcrReconstruction(value: unknown): OcrReconstruction {
     throw new Error("AI could not confidently reconstruct this recipe.");
   }
 
+  const mode = parsed.mode === "approximated" ? "approximated" : "reconstructed";
   return {
+    mode,
     recipe: {
       title: cleanAiText(rawRecipe.title, 300) || "Scanned recipe",
       description: cleanAiText(rawRecipe.description, 600),
@@ -250,8 +253,10 @@ function parseOcrReconstruction(value: unknown): OcrReconstruction {
     },
     confidence:
       typeof parsed.confidence === "number"
-        ? Math.max(0, Math.min(1, parsed.confidence))
-        : 0.65,
+        ? Math.max(0, Math.min(mode === "approximated" ? 0.55 : 1, parsed.confidence))
+        : mode === "approximated"
+          ? 0.45
+          : 0.65,
     warnings: cleanAiArray(parsed.warnings, 6, 240)
   };
 }
@@ -268,10 +273,13 @@ export async function reconstructRecipeFromOcr(
     "Correct obvious OCR spelling, punctuation, fractions, units, line breaks, and section boundaries.",
     "Separate ingredients from directions and remove commentary, advertisements, navigation, and unrelated prose.",
     "Preserve quantities, temperatures, timing, ingredient names, and cooking actions when visible.",
-    "Use culinary context to resolve damaged text, but do not invent substantive ingredients or steps that are not present or strongly implied.",
-    "If information is uncertain, make the safest plausible choice and mention it in warnings.",
-    "Return at least one ingredient and one instruction.",
-    'Return only JSON: {"recipe":{"title":"...","description":"...","yield":"...","prepTime":"...","cookTime":"...","totalTime":"...","ingredients":["..."],"instructions":["..."]},"confidence":0.0,"warnings":["..."]}',
+    "Choose mode reconstructed when the evidence contains usable quantities and directions. In that mode, do not invent substantive ingredients or steps.",
+    "Choose mode approximated when the dish and ingredient set are recognizable but quantities or directions are absent. In that mode, create a conservative, workable recipe using standard culinary ratios and techniques.",
+    "In approximated mode, prefer only ingredients visible or strongly established by the evidence. You may infer quantities, yield, timing, temperature, and ordinary preparation steps.",
+    "Every inferred quantity, temperature, duration, yield, or major step must be disclosed concisely in warnings, and confidence must not exceed 0.55.",
+    "If neither the dish nor a coherent ingredient set can be identified, return empty ingredient and instruction arrays rather than guessing.",
+    "Return at least one ingredient and one instruction for a usable result.",
+    'Return only JSON: {"mode":"reconstructed","recipe":{"title":"...","description":"...","yield":"...","prepTime":"...","cookTime":"...","totalTime":"...","ingredients":["..."],"instructions":["..."]},"confidence":0.0,"warnings":["..."]}',
     JSON.stringify(input)
   ].join("\n\n");
 
