@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CookingMode } from "./components/CookingMode";
+import { FirstRunExperience } from "./components/FirstRunExperience";
 import { Icon } from "./components/Icon";
 import { ImportPanel } from "./components/ImportPanel";
 import { RecipeEditor } from "./components/RecipeEditor";
@@ -175,6 +176,10 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <FirstRunExperience
+        onStart={startNewRecipe}
+        onSample={() => acceptRecipe(SAMPLE_RECIPE)}
+      />
       <header className="site-header">
         <a className="brand-lockup" href="#top" aria-label="RecipeTable home">
           <span className="brand-mark" aria-hidden="true">
@@ -203,28 +208,29 @@ export default function App() {
           <div className="hero-copy">
             <span className="eyebrow hero-eyebrow">
               <Icon name="sparkle" size={16} />
-              A calmer way to cook
+              The visual recipe format
             </span>
             <h1>
-              Recipes that
-              <em> show their work.</em>
+              See the whole recipe.
+              <em>Cook without the chaos.</em>
             </h1>
             <p>
-              Turn cluttered recipe pages, cookbook photos, and family notes into
-              one clear visual flow—ingredients, actions, timing, all together.
+              Paste a link, photograph a cookbook page, or drop in a screenshot.
+              RecipeTable extracts the real cooking logic and turns it into one
+              elegant map—ingredients, actions, timing, and temperature together.
             </p>
             <div className="hero-proof">
               <div>
-                <strong>Zero</strong>
-                <span>accounts or uploads</span>
+                <strong>3 ways in</strong>
+                <span>URL, photo, or text</span>
               </div>
               <div>
-                <strong>One</strong>
-                <span>glance while cooking</span>
+                <strong>One map</strong>
+                <span>the entire cooking flow</span>
               </div>
               <div>
-                <strong>Any</strong>
-                <span>recipe source</span>
+                <strong>Local-first</strong>
+                <span>private browser library</span>
               </div>
             </div>
           </div>
