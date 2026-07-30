@@ -9,9 +9,10 @@ import type { Env, ExecutionContextLike } from "./types";
 
 const MAX_REQUEST_BYTES = 96 * 1024;
 
-function allowedOrigin(request: Request, env: Env): string | null {
+export function allowedOrigin(request: Request, env: Env): string | null {
   const origin = request.headers.get("origin");
   if (!origin) return "*";
+  if (origin === new URL(request.url).origin) return origin;
   const configured = (env.ALLOWED_ORIGINS || "")
     .split(",")
     .map((value) => value.trim())
@@ -167,11 +168,11 @@ export default {
 
     const url = new URL(request.url);
     try {
-      if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
+      if (request.method === "GET" && url.pathname === "/health") {
         return json(
           {
             ok: true,
-            service: "RecipeTable extractor",
+            service: "RecipeTable",
             endpoints: ["POST /extract", "POST /compile"]
           },
           200,

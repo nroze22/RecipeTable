@@ -4,9 +4,10 @@ RecipeTable turns a recipe URL, photo, screenshot, or pasted recipe into a compa
 
 The product is local-first and intentionally cheap to operate:
 
-- The React PWA is a static Vite build hosted on Vercel.
+- One Cloudflare Worker serves the static React PWA and the recipe API from the
+  same origin.
 - Tesseract.js performs photo OCR inside the browser; recipe images are never uploaded. Its Worker, WebAssembly core, and English model are self-hosted with the app.
-- A small Cloudflare Worker fetches user-requested recipe URLs and extracts their Schema.org recipe card.
+- The Worker fetches user-requested recipe URLs and extracts their Schema.org recipe card.
 - A deterministic compiler maps ingredients to steps in the browser.
 - An optional Qwen model on Cloudflare Workers AI refines ambiguous mappings.
 - Recent recipes are stored in `localStorage`. There is no account system or database.
@@ -15,7 +16,8 @@ The product is local-first and intentionally cheap to operate:
 
 ```mermaid
 flowchart LR
-    URL["Recipe URL"] --> Worker["Cloudflare Worker"]
+    Browser["Cloudflare static app"] --> URL["Recipe URL"]
+    URL --> Worker["Same-origin Worker API"]
     Worker --> Structured["Normalized recipe"]
     Photo["Photo or screenshot"] --> OCR["Tesseract.js in browser"]
     Text["Pasted text"] --> Structured
@@ -72,56 +74,57 @@ VITE_RECIPE_WORKER_URL=http://localhost:8787
 VITE_ENABLE_AI_COMPILER=false
 ```
 
-## Deploy the Cloudflare Worker
+## Deploy from GitHub to Cloudflare
 
-Authenticate Wrangler and deploy:
+The production app is one Cloudflare Worker: static assets are served before the
+Worker script, while `/health`, `/extract`, and `/compile` run through the API.
+No production environment variables or cross-origin configuration are required.
 
-```bash
-npx wrangler login
-npm run worker:deploy
-```
+From a phone or desktop:
 
-Wrangler prints a URL similar to:
+1. Open **Cloudflare Dashboard → Workers & Pages → Create application**.
+2. Choose **Import a repository**, connect GitHub, and select
+   `nroze22/RecipeTable`.
+3. Use `main` as the production branch.
+4. Keep the root directory at `/`.
+5. Set the build command to `npm run build`.
+6. Set the deploy command to `npm run worker:deploy`.
+7. Set the Worker name to `recipe-table`, matching
+   [`worker/wrangler.jsonc`](worker/wrangler.jsonc).
+8. Save and deploy.
+
+Cloudflare provides a URL similar to:
 
 ```text
-https://recipe-table-extractor.<account-subdomain>.workers.dev
+https://recipe-table.<account-subdomain>.workers.dev
 ```
 
-The Worker configuration lives in [`worker/wrangler.jsonc`](worker/wrangler.jsonc). It binds Workers AI as `AI` and defaults to:
+Each later push to `main` builds and deploys automatically. A custom domain can
+be added from **Workers & Pages → recipe-table → Settings → Domains & Routes**.
+
+The Worker configuration binds Workers AI as `AI` and defaults to:
 
 ```text
 @cf/qwen/qwen3-30b-a3b-fp8
 ```
 
-Before production use, set `ALLOWED_ORIGINS` to the exact Vercel production and preview origins that should call the Worker. Multiple origins are comma separated:
+Automatic AI refinement remains off unless `VITE_ENABLE_AI_COMPILER=true` is
+defined during the frontend build. Users can still request the optional pass
+with **Smart Map**. The deterministic compiler and every other core feature work
+without AI.
 
-```text
-https://recipetable.example,https://recipe-table.vercel.app
+For a command-line deployment instead, authenticate Wrangler and run:
+
+```bash
+npx wrangler login
+npm run deploy
 ```
-
-This can be updated in the Cloudflare dashboard under **Workers & Pages → recipe-table-extractor → Settings → Variables and Secrets**, or in `worker/wrangler.jsonc` before deployment.
 
 The Worker exposes:
 
 - `GET /health`
 - `POST /extract` with `{ "url": "https://…" }`
 - `POST /compile` with the normalized recipe arrays
-
-## Deploy the frontend to Vercel
-
-1. Import `nroze22/RecipeTable` into Vercel.
-2. Keep the detected framework as **Vite**.
-3. Add:
-
-   ```dotenv
-   VITE_RECIPE_WORKER_URL=https://recipe-table-extractor.<account-subdomain>.workers.dev
-   VITE_ENABLE_AI_COMPILER=false
-   ```
-
-4. Deploy.
-5. Add the resulting Vercel origin to the Worker's `ALLOWED_ORIGINS` and redeploy the Worker.
-
-Set `VITE_ENABLE_AI_COMPILER=true` only if every newly imported recipe should receive the optional Qwen mapping pass automatically. With it disabled, users can still invoke the pass through **Smart Map**.
 
 ## Validation
 
@@ -150,7 +153,7 @@ If a site blocks the request or does not publish structured recipe data, the UI 
 ## Privacy and content policy
 
 - Uploaded images remain in browser memory and are processed by Tesseract WebAssembly.
-- OCR engine files are lazily downloaded from the same Vercel origin on the first scan and cached by the browser.
+- OCR engine files are lazily downloaded from the same Cloudflare origin on the first scan and cached by the browser.
 - Raw page HTML is never returned to the frontend or stored.
 - The app retains source attribution and an original-recipe link.
 - Source photography is not copied into exports.

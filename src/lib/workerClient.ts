@@ -29,8 +29,12 @@ interface ApiError {
 }
 
 function workerUrl(path: string): string {
-  const base = import.meta.env.VITE_RECIPE_WORKER_URL?.replace(/\/+$/, "");
-  if (!base) {
+  const configuredBase = import.meta.env.VITE_RECIPE_WORKER_URL?.replace(
+    /\/+$/,
+    ""
+  );
+  const base = configuredBase || (import.meta.env.PROD ? "" : undefined);
+  if (base === undefined) {
     throw new Error(
       "URL importing is not connected yet. Paste the recipe text or configure VITE_RECIPE_WORKER_URL."
     );
@@ -89,6 +93,5 @@ export async function refineRecipeLinks(
 }
 
 export function isWorkerConfigured(): boolean {
-  return Boolean(import.meta.env.VITE_RECIPE_WORKER_URL);
+  return Boolean(import.meta.env.VITE_RECIPE_WORKER_URL || import.meta.env.PROD);
 }
-

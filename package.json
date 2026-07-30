@@ -13,8 +13,9 @@
     "check": "tsc -b --pretty false && npm run check --workspace worker",
     "test": "vitest run && npm run test --workspace worker",
     "test:watch": "vitest",
-    "worker:dev": "npm run dev --workspace worker",
-    "worker:deploy": "npm run deploy --workspace worker"
+    "worker:dev": "npm run build && npm run dev --workspace worker",
+    "worker:deploy": "npm run deploy --workspace worker",
+    "deploy": "npm run build && npm run worker:deploy"
   },
   "dependencies": {
     "@tesseract.js-data/eng": "^1.0.0",
