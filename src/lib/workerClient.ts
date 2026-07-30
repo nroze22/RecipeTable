@@ -21,6 +21,21 @@ interface ExtractedRecipePayload {
   cached?: boolean;
 }
 
+interface OcrReconstructionPayload {
+  recipe: {
+    title: string;
+    description?: string;
+    yield?: string;
+    prepTime?: string;
+    cookTime?: string;
+    totalTime?: string;
+    ingredients: string[];
+    instructions: string[];
+  };
+  confidence: number;
+  warnings: string[];
+}
+
 interface ApiError {
   error?: {
     message?: string;
@@ -71,6 +86,33 @@ export async function extractRecipeUrl(url: string): Promise<Recipe> {
     cookTime: extracted.cookTime,
     totalTime: extracted.totalTime
   });
+}
+
+export async function reconstructRecipeOcr(
+  text: string,
+  fileName: string
+): Promise<{ recipe: Recipe; confidence: number; warnings: string[] }> {
+  const response = await fetch(workerUrl("/ocr-reconstruct"), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text, fileName })
+  });
+  const payload = await parseResponse<OcrReconstructionPayload>(response);
+  return {
+    recipe: recipeFromParts({
+      title: payload.recipe.title,
+      description: payload.recipe.description,
+      ingredientLines: payload.recipe.ingredients,
+      instructionLines: payload.recipe.instructions,
+      source: { siteName: `AI-assisted scan of ${fileName}` },
+      yield: payload.recipe.yield,
+      prepTime: payload.recipe.prepTime,
+      cookTime: payload.recipe.cookTime,
+      totalTime: payload.recipe.totalTime
+    }),
+    confidence: payload.confidence,
+    warnings: payload.warnings
+  };
 }
 
 export async function refineRecipeLinks(
