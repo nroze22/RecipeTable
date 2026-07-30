@@ -19,7 +19,7 @@ const modes: Array<{ id: ImportMode; label: string; icon: IconName }> = [
 ];
 
 interface ImportPanelProps {
-  onImport: (recipe: Recipe, notice?: string) => void;
+  onImport: (recipe: Recipe, notice?: string, optimizeFlow?: boolean) => void;
 }
 
 export function ImportPanel({ onImport }: ImportPanelProps) {
@@ -98,7 +98,7 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
             reconstructed.mode === "approximated"
               ? `This image did not contain a complete recipe, so AI created a close culinary approximation from the visible evidence. Review every quantity and step, then use Edit for corrections.${uncertainty}`
               : `AI reconstructed this recipe from locally extracted text. It is a close approximation—review quantities and steps, then use Edit for any corrections.${uncertainty}`;
-          onImport(reconstructed.recipe, notice);
+          onImport(reconstructed.recipe, notice, true);
           setStatus(
             reconstructed.mode === "approximated"
               ? "Culinary approximation ready"
