@@ -45,10 +45,10 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipe.id]);
 
-  function acceptRecipe(next: Recipe) {
+  function acceptRecipe(next: Recipe, notice?: string) {
     setRecipe(next);
     setLinkPlan([]);
-    setRefineMessage("");
+    setRefineMessage(notice || "");
     saveRecentRecipe(next);
     window.setTimeout(() => {
       resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });

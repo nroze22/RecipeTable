@@ -6,7 +6,7 @@ The product is local-first and intentionally cheap to operate:
 
 - One Cloudflare Worker serves the static React PWA and the recipe API from the
   same origin.
-- Tesseract.js performs photo OCR inside the browser; recipe images are never uploaded. Its Worker, WebAssembly core, and English model are self-hosted with the app.
+- Tesseract.js performs photo OCR inside the browser; recipe images are never uploaded. Its Worker, WebAssembly core, and English model are self-hosted with the app. In production, the extracted text is automatically sent to Workers AI for schema-constrained cleanup, with a local fallback when AI is unavailable.
 - The Worker fetches user-requested recipe URLs and extracts their Schema.org recipe card.
 - A deterministic compiler maps ingredients to steps in the browser.
 - An optional Qwen model on Cloudflare Workers AI refines ambiguous mappings.
@@ -21,7 +21,8 @@ flowchart LR
     Worker --> Structured["Normalized recipe"]
     Photo["Photo or screenshot"] --> OCR["Tesseract.js in browser"]
     Text["Pasted text"] --> Structured
-    OCR --> Structured
+    OCR --> Cleanup["Workers AI text cleanup"]
+    Cleanup --> Structured
     Structured --> Compiler["Local recipe compiler"]
     Compiler --> Table["Visual table + cooking mode"]
     Worker -. optional Qwen mapping .-> Compiler
@@ -32,6 +33,7 @@ flowchart LR
 - URL import using JSON-LD, `@graph`, `HowToSection`, Microdata, and RDFa-style `itemprop` fallbacks
 - Canonical source, author, site, image, yield, and ISO-8601 time extraction
 - Browser-only image preprocessing and Tesseract OCR
+- Automatic Workers AI reconstruction of noisy OCR into validated recipe fields
 - OCR/text section inference when headings are missing
 - Ingredient quantity, unit, preparation, and optional-item parsing
 - Deterministic ingredient-to-step mapping with grouped dry/wet ingredient support
@@ -124,6 +126,7 @@ The Worker exposes:
 
 - `GET /health`
 - `POST /extract` with `{ "url": "https://…" }`
+- `POST /ocr-reconstruct` with locally extracted OCR text
 - `POST /compile` with the normalized recipe arrays
 
 ## Validation
@@ -153,11 +156,12 @@ If a site blocks the request or does not publish structured recipe data, the UI 
 ## Privacy and content policy
 
 - Uploaded images remain in browser memory and are processed by Tesseract WebAssembly.
+- For image imports, only Tesseract's extracted text and the sanitized file name are sent to Workers AI; the image itself is never sent. AI-assisted results are labeled as editable approximations.
 - OCR engine files are lazily downloaded from the same Cloudflare origin on the first scan and cached by the browser.
 - Raw page HTML is never returned to the frontend or stored.
 - The app retains source attribution and an original-recipe link.
 - Source photography is not copied into exports.
-- The AI endpoint sees only normalized ingredient and step strings.
+- The mapping endpoint sees only normalized ingredient and step strings; the OCR reconstruction endpoint sees only bounded OCR text.
 - AI output can only reference existing ingredient and step indexes; unknown values are discarded.
 
 Recipe owners may have rights in expressive directions, photography, and compilations even where factual ingredient lists and basic procedures are not protected. Production use should keep imports user-initiated, preserve attribution, and avoid republishing long expressive passages as a public recipe catalog.
