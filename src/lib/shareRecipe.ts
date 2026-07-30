@@ -114,6 +114,7 @@ export async function readSharedRecipe(): Promise<Recipe | null> {
     token.slice(0, separator),
     base64UrlToBytes(token.slice(separator + 1))
   );
+  if (text.length > 180_000) throw new Error("That recipe link expands beyond the safe limit.");
   const data = JSON.parse(text) as Partial<CompactRecipe>;
 
   if (
