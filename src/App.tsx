@@ -7,7 +7,11 @@ import { RecipeFlow } from "./components/RecipeFlow";
 import { SAMPLE_RECIPE } from "./data/sample";
 import { copyRecipeTable, downloadRecipePng } from "./lib/exportRecipe";
 import { compileRecipe } from "./lib/recipeGraph";
-import { loadRecentRecipes, saveRecentRecipe } from "./lib/storage";
+import {
+  clearActiveRecipe,
+  loadActiveRecipe,
+  saveRecentRecipe
+} from "./lib/storage";
 import {
   isWorkerConfigured,
   refineRecipeLinks
@@ -15,9 +19,8 @@ import {
 import type { IngredientStepLink, Recipe } from "./types";
 
 export default function App() {
-  const [recipe, setRecipe] = useState<Recipe>(
-    () => loadRecentRecipes()[0] ?? SAMPLE_RECIPE
-  );
+  const [recipe, setRecipe] = useState<Recipe | null>(() => loadActiveRecipe());
+  const [importKey, setImportKey] = useState(0);
   const [linkPlan, setLinkPlan] = useState<IngredientStepLink[]>([]);
   const [editing, setEditing] = useState(false);
   const [cooking, setCooking] = useState(false);
@@ -27,14 +30,16 @@ export default function App() {
   const [exporting, setExporting] = useState(false);
   const resultRef = useRef<HTMLElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const recipeGenerationRef = useRef(0);
 
   const compiled = useMemo(
-    () => compileRecipe(recipe, linkPlan),
+    () => compileRecipe(recipe ?? SAMPLE_RECIPE, linkPlan),
     [recipe, linkPlan]
   );
 
   useEffect(() => {
     if (
+      recipe &&
       import.meta.env.VITE_ENABLE_AI_COMPILER === "true" &&
       isWorkerConfigured() &&
       recipe !== SAMPLE_RECIPE
@@ -43,19 +48,68 @@ export default function App() {
     }
     // The recipe identity intentionally controls this one-shot refinement.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipe.id]);
+  }, [recipe?.id]);
 
-  function acceptRecipe(next: Recipe, notice?: string) {
+  function acceptRecipe(
+    next: Recipe,
+    notice?: string,
+    optimizeFlow = false
+  ) {
+    const generation = ++recipeGenerationRef.current;
     setRecipe(next);
     setLinkPlan([]);
     setRefineMessage(notice || "");
     saveRecentRecipe(next);
+
+    if (optimizeFlow && isWorkerConfigured()) {
+      setRefining(true);
+      void refineRecipeLinks(next)
+        .then((plan) => {
+          if (recipeGenerationRef.current !== generation) return;
+          setLinkPlan(plan);
+          setRefineMessage(
+            [notice, "Ingredient flow was automatically optimized for the visual table."]
+              .filter(Boolean)
+              .join(" ")
+          );
+        })
+        .catch(() => {
+          if (recipeGenerationRef.current !== generation) return;
+          setRefineMessage(
+            [notice, "Smart mapping was unavailable, so the local flow is shown."]
+              .filter(Boolean)
+              .join(" ")
+          );
+        })
+        .finally(() => {
+          if (recipeGenerationRef.current === generation) setRefining(false);
+        });
+    }
+
     window.setTimeout(() => {
       resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 80);
   }
 
+  function startNewRecipe() {
+    recipeGenerationRef.current += 1;
+    clearActiveRecipe();
+    setRecipe(null);
+    setLinkPlan([]);
+    setRefineMessage("");
+    setEditing(false);
+    setCooking(false);
+    setRefining(false);
+    setImportKey((value) => value + 1);
+    window.setTimeout(() => {
+      document
+        .querySelector(".import-card")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 40);
+  }
+
   async function refine() {
+    if (!recipe) return;
     if (!isWorkerConfigured()) {
       setRefineMessage("Deploy and connect the Worker to enable Smart Map.");
       return;
@@ -88,7 +142,7 @@ export default function App() {
   }
 
   async function exportPng() {
-    if (!sheetRef.current) return;
+    if (!recipe || !sheetRef.current) return;
     setExporting(true);
     try {
       await downloadRecipePng(sheetRef.current, recipe.title);
@@ -111,6 +165,10 @@ export default function App() {
           <span>RecipeTable</span>
         </a>
         <nav aria-label="Primary navigation">
+          <button className="new-recipe-button" type="button" onClick={startNewRecipe}>
+            <Icon name="plus" size={16} />
+            New recipe
+          </button>
           <a href="#how-it-works">How it works</a>
           <span className="local-pill">
             <Icon name="shield" size={15} />
@@ -173,8 +231,9 @@ export default function App() {
           </div>
         </section>
 
-        <ImportPanel onImport={acceptRecipe} />
+        <ImportPanel key={importKey} onImport={acceptRecipe} />
 
+        {recipe && (
         <section className="result-section" ref={resultRef} aria-labelledby="result-title">
           <div className="result-heading">
             <div>
@@ -238,6 +297,7 @@ export default function App() {
             On smaller screens, swipe the table to move through stages.
           </p>
         </section>
+        )}
 
         <section className="how-section" id="how-it-works">
           <div className="how-intro">
@@ -294,7 +354,7 @@ export default function App() {
         <span>Built with open tools.</span>
       </footer>
 
-      {editing && (
+      {editing && recipe && (
         <RecipeEditor
           recipe={recipe}
           onClose={() => setEditing(false)}

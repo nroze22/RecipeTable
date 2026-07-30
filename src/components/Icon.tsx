@@ -13,6 +13,7 @@ export type IconName =
   | "image"
   | "link"
   | "play"
+  | "plus"
   | "scan"
   | "shield"
   | "sparkle"
@@ -58,6 +59,7 @@ const paths: Record<IconName, React.ReactNode> = {
     </>
   ),
   play: <path d="m9 6 9 6-9 6z" />,
+  plus: <path d="M12 5v14M5 12h14" />,
   scan: (
     <>
       <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />

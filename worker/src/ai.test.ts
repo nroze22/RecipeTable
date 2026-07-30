@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isFlowReady,
   validateCompileRequest,
   validateOcrReconstructionRequest
 } from "./ai";
@@ -43,5 +44,55 @@ describe("validateOcrReconstructionRequest", () => {
     expect(() =>
       validateOcrReconstructionRequest({ text: "x".repeat(48_001) })
     ).toThrow();
+  });
+});
+
+
+describe("isFlowReady", () => {
+  it("rejects one-shallow-step-per-ingredient approximations", () => {
+    expect(
+      isFlowReady({
+        mode: "approximated",
+        recipe: {
+          title: "Cake",
+          ingredients: ["Eggs", "Baking powder", "Milk", "Sugar"],
+          instructions: [
+            "Use eggs",
+            "Use baking powder",
+            "Use milk",
+            "Use sugar"
+          ]
+        },
+        confidence: 0.5,
+        warnings: []
+      })
+    ).toBe(false);
+  });
+
+  it("accepts quantified, grouped cooking flows", () => {
+    expect(
+      isFlowReady({
+        mode: "approximated",
+        recipe: {
+          title: "Vanilla cake",
+          ingredients: [
+            "2 cups all-purpose flour",
+            "2 tsp baking powder",
+            "1 cup sugar",
+            "2 large eggs",
+            "1 cup milk"
+          ],
+          instructions: [
+            "Preheat the oven to 350°F and prepare an 8-inch pan.",
+            "Whisk the flour and baking powder together in a bowl.",
+            "Beat the sugar and eggs until pale and fluffy.",
+            "Fold the flour mixture into the eggs, alternating with the milk.",
+            "Bake until the center springs back, about 30 minutes."
+          ]
+        },
+        confidence: 0.5,
+        warnings: ["Quantities and baking time were estimated."]
+      })
+    ).toBe(true);
   });
 });
