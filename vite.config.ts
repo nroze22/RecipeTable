@@ -29,7 +29,10 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["icon.svg"],
       workbox: {
-        globIgnores: ["**/tesseract/**"]
+        globIgnores: ["**/tesseract/**"],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true
       },
       manifest: {
         name: "RecipeTable",
