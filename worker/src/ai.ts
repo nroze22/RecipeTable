@@ -261,7 +261,7 @@ function parseOcrReconstruction(value: unknown): OcrReconstruction {
   };
 }
 
-function isFlowReady(reconstruction: OcrReconstruction): boolean {
+export function isFlowReady(reconstruction: OcrReconstruction): boolean {
   if (reconstruction.recipe.ingredients.length === 0) return false;
   if (reconstruction.recipe.instructions.length < 2) return false;
   if (reconstruction.mode === "reconstructed") return true;
