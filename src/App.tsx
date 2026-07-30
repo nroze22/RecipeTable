@@ -4,12 +4,13 @@ import { Icon } from "./components/Icon";
 import { ImportPanel } from "./components/ImportPanel";
 import { RecipeEditor } from "./components/RecipeEditor";
 import { RecipeFlow } from "./components/RecipeFlow";
+import { RecipeLibrary } from "./components/RecipeLibrary";
 import { SAMPLE_RECIPE } from "./data/sample";
 import { copyRecipeTable, downloadRecipePng } from "./lib/exportRecipe";
 import { compileRecipe } from "./lib/recipeGraph";
 import {
-  clearActiveRecipe,
-  loadActiveRecipe,
+  deleteRecentRecipe,
+  loadRecentRecipes,
   saveRecentRecipe
 } from "./lib/storage";
 import {
@@ -19,7 +20,8 @@ import {
 import type { IngredientStepLink, Recipe } from "./types";
 
 export default function App() {
-  const [recipe, setRecipe] = useState<Recipe | null>(() => loadActiveRecipe());
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [library, setLibrary] = useState<Recipe[]>(() => loadRecentRecipes());
   const [importKey, setImportKey] = useState(0);
   const [linkPlan, setLinkPlan] = useState<IngredientStepLink[]>([]);
   const [editing, setEditing] = useState(false);
@@ -60,6 +62,7 @@ export default function App() {
     setLinkPlan([]);
     setRefineMessage(notice || "");
     saveRecentRecipe(next);
+    setLibrary(loadRecentRecipes());
 
     if (optimizeFlow && isWorkerConfigured()) {
       setRefining(true);
@@ -93,7 +96,6 @@ export default function App() {
 
   function startNewRecipe() {
     recipeGenerationRef.current += 1;
-    clearActiveRecipe();
     setRecipe(null);
     setLinkPlan([]);
     setRefineMessage("");
@@ -106,6 +108,24 @@ export default function App() {
         .querySelector(".import-card")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 40);
+  }
+
+  function openSavedRecipe(saved: Recipe) {
+    recipeGenerationRef.current += 1;
+    setRecipe(saved);
+    setLinkPlan([]);
+    setRefineMessage("");
+    setEditing(false);
+    setCooking(false);
+    window.setTimeout(() => {
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  }
+
+  function removeSavedRecipe(recipeId: string) {
+    deleteRecentRecipe(recipeId);
+    setLibrary(loadRecentRecipes());
+    if (recipe?.id === recipeId) startNewRecipe();
   }
 
   async function refine() {
@@ -169,7 +189,8 @@ export default function App() {
             <Icon name="plus" size={16} />
             New recipe
           </button>
-          <a href="#how-it-works">How it works</a>
+          <a className="library-nav-link" href="#library">Library</a>
+          <a className="how-nav-link" href="#how-it-works">How it works</a>
           <span className="local-pill">
             <Icon name="shield" size={15} />
             Local by default
@@ -298,6 +319,12 @@ export default function App() {
           </p>
         </section>
         )}
+
+        <RecipeLibrary
+          recipes={library}
+          onOpen={openSavedRecipe}
+          onDelete={removeSavedRecipe}
+        />
 
         <section className="how-section" id="how-it-works">
           <div className="how-intro">
