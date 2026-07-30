@@ -264,6 +264,19 @@ export default function App() {
               RecipeTable extracts the real cooking logic and turns it into one
               elegant map—ingredients, actions, timing, and temperature together.
             </p>
+            <div className="hero-demo-cta">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() =>
+                  document.querySelector<HTMLButtonElement>(".sample-button")?.click()
+                }
+              >
+                <Icon name="play" size={17} />
+                Watch the 15-second transformation
+              </button>
+              <span>No signup · guaranteed demo</span>
+            </div>
             <div className="hero-proof">
               <div>
                 <strong>3 ways in</strong>
