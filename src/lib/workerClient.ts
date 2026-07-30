@@ -22,6 +22,7 @@ interface ExtractedRecipePayload {
 }
 
 interface OcrReconstructionPayload {
+  mode: "reconstructed" | "approximated";
   recipe: {
     title: string;
     description?: string;
@@ -91,7 +92,12 @@ export async function extractRecipeUrl(url: string): Promise<Recipe> {
 export async function reconstructRecipeOcr(
   text: string,
   fileName: string
-): Promise<{ recipe: Recipe; confidence: number; warnings: string[] }> {
+): Promise<{
+  recipe: Recipe;
+  mode: "reconstructed" | "approximated";
+  confidence: number;
+  warnings: string[];
+}> {
   const response = await fetch(workerUrl("/ocr-reconstruct"), {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -110,6 +116,7 @@ export async function reconstructRecipeOcr(
       cookTime: payload.recipe.cookTime,
       totalTime: payload.recipe.totalTime
     }),
+    mode: payload.mode,
     confidence: payload.confidence,
     warnings: payload.warnings
   };
