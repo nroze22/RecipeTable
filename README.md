@@ -88,9 +88,9 @@ From a phone or desktop:
 3. Use `main` as the production branch.
 4. Keep the root directory at `/`.
 5. Set the build command to `npm run build`.
-6. Set the deploy command to `npm run worker:deploy`.
+6. Set the deploy command to `npx wrangler deploy`.
 7. Set the Worker name to `recipe-table`, matching
-   [`worker/wrangler.jsonc`](worker/wrangler.jsonc).
+   [`wrangler.jsonc`](wrangler.jsonc).
 8. Save and deploy.
 
 Cloudflare provides a URL similar to:
@@ -174,4 +174,5 @@ worker/
   src/extract.ts    Structured recipe extraction
   src/security.ts   URL validation and bounded fetch
   src/index.ts      Worker API, CORS, caching, error handling
+wrangler.jsonc      Root Cloudflare Worker and Static Assets configuration
 ```
