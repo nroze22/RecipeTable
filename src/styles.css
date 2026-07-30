@@ -130,6 +130,25 @@
     text-decoration: none;
   }
 
+  .new-recipe-button {
+    display: inline-flex;
+    min-height: 38px;
+    padding: 0 13px;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid rgb(23 55 47 / 0.2);
+    border-radius: 8px;
+    color: var(--ink);
+    background: rgb(255 253 248 / 0.72);
+    font-size: 0.76rem;
+    font-weight: 750;
+  }
+
+  .new-recipe-button:hover {
+    border-color: rgb(23 55 47 / 0.38);
+    background: var(--white);
+  }
+
   .brand-lockup {
     display: inline-flex;
     align-items: center;
@@ -1539,6 +1558,16 @@
 
   .site-header nav a {
     display: none;
+  }
+
+  .site-header nav {
+    gap: 8px;
+  }
+
+  .new-recipe-button {
+    min-height: 34px;
+    padding: 0 9px;
+    font-size: 0.66rem;
   }
 
   .local-pill {
