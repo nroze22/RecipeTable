@@ -1,9 +1,7 @@
 import type { Recipe } from "../types";
 
 const STORAGE_KEY = "recipe-table:recent";
-const ACTIVE_RECIPE_KEY = "recipe-table:active";
-const EMPTY_ACTIVE_RECIPE = "none";
-const MAX_RECENT = 8;
+const MAX_RECENT = 24;
 
 export function loadRecentRecipes(): Recipe[] {
   if (typeof window === "undefined") return [];
@@ -18,22 +16,6 @@ export function loadRecentRecipes(): Recipe[] {
   }
 }
 
-export function loadActiveRecipe(): Recipe | null {
-  if (typeof window === "undefined") return null;
-  const recent = loadRecentRecipes();
-  const activeId = window.localStorage.getItem(ACTIVE_RECIPE_KEY);
-  if (activeId === EMPTY_ACTIVE_RECIPE) return null;
-  if (activeId) {
-    return recent.find((recipe) => recipe.id === activeId) ?? recent[0] ?? null;
-  }
-  return recent[0] ?? null;
-}
-
-export function clearActiveRecipe(): void {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(ACTIVE_RECIPE_KEY, EMPTY_ACTIVE_RECIPE);
-}
-
 export function saveRecentRecipe(recipe: Recipe): void {
   if (typeof window === "undefined") return;
   const next = [
@@ -45,7 +27,12 @@ export function saveRecentRecipe(recipe: Recipe): void {
     )
   ].slice(0, MAX_RECENT);
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  window.localStorage.setItem(ACTIVE_RECIPE_KEY, recipe.id);
+}
+
+export function deleteRecentRecipe(recipeId: string): void {
+  if (typeof window === "undefined") return;
+  const next = loadRecentRecipes().filter((recipe) => recipe.id !== recipeId);
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 }
 
 function isRecipe(value: unknown): value is Recipe {
@@ -58,4 +45,3 @@ function isRecipe(value: unknown): value is Recipe {
     Array.isArray(candidate.steps)
   );
 }
-
