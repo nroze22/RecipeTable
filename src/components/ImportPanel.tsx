@@ -2,7 +2,11 @@ import { useRef, useState, type DragEvent, type FormEvent } from "react";
 import { SAMPLE_RECIPE } from "../data/sample";
 import { recognizeRecipeImage } from "../lib/ocr";
 import { parseRecipeText } from "../lib/parseRecipeText";
-import { extractRecipeUrl } from "../lib/workerClient";
+import {
+  extractRecipeUrl,
+  isWorkerConfigured,
+  reconstructRecipeOcr
+} from "../lib/workerClient";
 import type { Recipe } from "../types";
 import { Icon, type IconName } from "./Icon";
 
@@ -15,7 +19,7 @@ const modes: Array<{ id: ImportMode; label: string; icon: IconName }> = [
 ];
 
 interface ImportPanelProps {
-  onImport: (recipe: Recipe) => void;
+  onImport: (recipe: Recipe, notice?: string) => void;
 }
 
 export function ImportPanel({ onImport }: ImportPanelProps) {
@@ -78,10 +82,39 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
         setProgress(next.progress);
         setStatus(next.status);
       });
-      const recipe = parseRecipeText(recognized, {
+      const localRecipe = parseRecipeText(recognized, {
         siteName: `Scanned from ${file.name}`
       });
-      onImport(recipe);
+
+      if (isWorkerConfigured()) {
+        setStatus("Cleaning up the scan with AI");
+        try {
+          const reconstructed = await reconstructRecipeOcr(recognized, file.name);
+          const uncertainty =
+            reconstructed.warnings.length > 0
+              ? ` Notes: ${reconstructed.warnings.slice(0, 2).join(" ")}`
+              : "";
+          onImport(
+            reconstructed.recipe,
+            `AI reconstructed this recipe from locally extracted text. It is a close approximation—review quantities and steps, then use Edit for any corrections.${uncertainty}`
+          );
+          setStatus("AI-assisted approximation ready");
+          return;
+        } catch {
+          // Keep the scan useful if Workers AI is temporarily unavailable.
+        }
+      }
+
+      if (localRecipe.ingredients.length === 0 || localRecipe.steps.length === 0) {
+        throw new Error(
+          "The scan was too incomplete to structure locally, and AI cleanup was unavailable. Try a tighter, brighter crop."
+        );
+      }
+      onImport(
+        localRecipe,
+        "Tesseract created a local approximation. Review quantities and steps, then use Edit for any corrections."
+      );
+      setStatus("Local approximation ready");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The image could not be read.");
     } finally {
@@ -244,7 +277,7 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
       </div>
       <div className="privacy-note">
         <Icon name="shield" size={17} />
-        Photos are read in your browser and are never uploaded.
+        Your image stays in the browser. For AI cleanup, only the extracted text is sent to Cloudflare.
       </div>
     </section>
   );
