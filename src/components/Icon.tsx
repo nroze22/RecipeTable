@@ -16,6 +16,7 @@ export type IconName =
   | "plus"
   | "scan"
   | "shield"
+  | "share"
   | "sparkle"
   | "text"
   | "timer";
@@ -70,6 +71,14 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <path d="M12 3 5 6v5c0 4.5 2.7 8 7 10 4.3-2 7-5.5 7-10V6z" />
       <path d="m9 12 2 2 4-4" />
+    </>
+  ),
+  share: (
+    <>
+      <circle cx="18" cy="5" r="2.5" />
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="19" r="2.5" />
+      <path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5" />
     </>
   ),
   sparkle: (
