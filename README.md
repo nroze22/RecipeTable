@@ -43,6 +43,8 @@ flowchart LR
 - Inline recipe correction
 - PNG and spreadsheet-friendly TSV export
 - Local recent-recipe persistence
+- Account-free compressed recipe links with native sharing and local QR generation
+- Animated extraction/AI/mapping pipeline and source-to-table reveal
 - Installable PWA and offline application shell
 - SSRF defenses, redirect validation, response size limits, fetch timeouts, CORS allowlisting, and edge caching
 
