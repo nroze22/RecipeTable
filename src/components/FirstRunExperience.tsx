@@ -10,10 +10,10 @@ interface FirstRunExperienceProps {
 
 const slides = [
   {
-    eyebrow: "Welcome to RecipeTable",
+    eyebrow: "Welcome to Recipe Wizard",
     title: "From recipe chaos to one cooking map.",
     body:
-      "Paste a link, photograph a cookbook page, or drop in a screenshot. RecipeTable finds the actual cooking logic and redraws it as one calm visual flow."
+      "Paste a link, photograph a cookbook page, or drop in a screenshot. Recipe Wizard finds the actual cooking logic and redraws it as one calm visual flow."
   },
   {
     eyebrow: "Designed around the way you cook",
@@ -89,7 +89,7 @@ export function FirstRunExperience({
               <i />
               <i />
             </span>
-            <span>RecipeTable</span>
+            <span>Recipe Wizard</span>
           </span>
           <button className="onboarding-skip" type="button" onClick={() => finish()}>
             Skip introduction
