@@ -90,7 +90,7 @@ export function ShareRecipeDialog({ recipe, onClose }: ShareRecipeDialogProps) {
     try {
       await navigator.share({
         title: recipe.title,
-        text: `${recipe.title} — a visual recipe from RecipeTable`,
+        text: `${recipe.title} — a visual recipe from Recipe Wizard`,
         url
       });
     } catch (reason) {
@@ -134,7 +134,7 @@ export function ShareRecipeDialog({ recipe, onClose }: ShareRecipeDialogProps) {
             <h3>{recipe.title}</h3>
             <p>
               The ingredients and steps are compressed into this URL. There is no
-              RecipeTable account, public listing, or cloud recipe record.
+              Recipe Wizard account, public listing, or cloud recipe record.
             </p>
             <label htmlFor="share-url">Private recipe link</label>
             <div className="share-url-row">
