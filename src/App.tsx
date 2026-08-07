@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CookingMode } from "./components/CookingMode";
 import { FirstRunExperience } from "./components/FirstRunExperience";
+import { HowItWorks } from "./components/HowItWorks";
 import { Icon } from "./components/Icon";
 import { ImportPanel } from "./components/ImportPanel";
 import { RecipeEditor } from "./components/RecipeEditor";
@@ -277,6 +278,14 @@ export default function App() {
               </button>
               <span>No signup · guaranteed demo</span>
             </div>
+            <a className="hero-how-link" href="#how-it-works">
+              <span className="hero-how-icon"><Icon name="sparkle" size={16} /></span>
+              <span>
+                <strong>Curious how this stays nearly free?</strong>
+                Local OCR, edge extraction, and a right-sized open model.
+              </span>
+              <Icon name="arrow" size={17} />
+            </a>
             <div className="hero-proof">
               <div>
                 <strong>3 ways in</strong>
@@ -401,46 +410,7 @@ export default function App() {
           onDelete={removeSavedRecipe}
         />
 
-        <section className="how-section" id="how-it-works">
-          <div className="how-intro">
-            <span className="eyebrow">Built for the messy real world</span>
-            <h2>The intelligence stays out of your way.</h2>
-            <p>
-              Recipe Wizard uses structured recipe data first, private browser OCR
-              second, and an open model only when the ingredient flow is genuinely
-              ambiguous.
-            </p>
-          </div>
-          <div className="how-grid">
-            <article>
-              <span className="how-number">01</span>
-              <Icon name="link" size={24} />
-              <h3>Extract, don’t summarize</h3>
-              <p>
-                Pull the actual recipe card from the page while leaving essays,
-                ads, trackers, and pop-ups behind.
-              </p>
-            </article>
-            <article>
-              <span className="how-number">02</span>
-              <Icon name="scan" size={24} />
-              <h3>Read photos privately</h3>
-              <p>
-                Tesseract runs on your device. Cookbook pages and screenshots
-                never leave the browser.
-              </p>
-            </article>
-            <article>
-              <span className="how-number">03</span>
-              <Icon name="sparkle" size={24} />
-              <h3>Compile the cooking flow</h3>
-              <p>
-                Ingredients are linked to actions, checked for omissions, and
-                arranged into a timeline you can actually use.
-              </p>
-            </article>
-          </div>
-        </section>
+        <HowItWorks />
       </main>
 
       <footer className="site-footer">
@@ -453,7 +423,7 @@ export default function App() {
           <span>Recipe Wizard</span>
         </div>
         <p>Recipes made clear. Your kitchen, your data.</p>
-        <span>Built with open tools.</span>
+        <a className="footer-how-link" href="#how-it-works">How it works</a>
       </footer>
 
       {editing && recipe && (
