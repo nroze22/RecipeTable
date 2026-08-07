@@ -9,7 +9,7 @@ import { RecipeLibrary } from "./components/RecipeLibrary";
 import { RecipeReveal } from "./components/RecipeReveal";
 import { ShareRecipeDialog } from "./components/ShareRecipeDialog";
 import { SAMPLE_RECIPE } from "./data/sample";
-import { copyRecipe Wizard, downloadRecipePng } from "./lib/exportRecipe";
+import { copyRecipeTable, downloadRecipePng } from "./lib/exportRecipe";
 import { compileRecipe } from "./lib/recipeGraph";
 import { clearSharedRecipeHash, readSharedRecipe } from "./lib/shareRecipe";
 import {
@@ -199,7 +199,7 @@ export default function App() {
 
   async function copyTable() {
     try {
-      await copyRecipe Wizard(compiled);
+      await copyRecipeTable(compiled);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
