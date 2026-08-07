@@ -56,7 +56,7 @@ export default function App() {
         if (!shared) return;
         acceptRecipe(
           shared,
-          "Opened from a private RecipeTable link. The recipe was carried inside the URL—nothing was fetched from a recipe database."
+          "Opened from a private Recipe Wizard link. The recipe was carried inside the URL—nothing was fetched from a recipe database."
         );
       })
       .catch((reason) => {
@@ -226,13 +226,13 @@ export default function App() {
         onSample={() => acceptRecipe(SAMPLE_RECIPE)}
       />
       <header className="site-header">
-        <a className="brand-lockup" href="#top" aria-label="RecipeTable home">
+        <a className="brand-lockup" href="#top" aria-label="Recipe Wizard home">
           <span className="brand-mark" aria-hidden="true">
             <i />
             <i />
             <i />
           </span>
-          <span>RecipeTable</span>
+          <span>Recipe Wizard</span>
         </a>
         <nav aria-label="Primary navigation">
           <button className="new-recipe-button" type="button" onClick={startNewRecipe}>
@@ -261,7 +261,7 @@ export default function App() {
             </h1>
             <p>
               Paste a link, photograph a cookbook page, or drop in a screenshot.
-              RecipeTable extracts the real cooking logic and turns it into one
+              Recipe Wizard extracts the real cooking logic and turns it into one
               elegant map—ingredients, actions, timing, and temperature together.
             </p>
             <div className="hero-demo-cta">
@@ -406,7 +406,7 @@ export default function App() {
             <span className="eyebrow">Built for the messy real world</span>
             <h2>The intelligence stays out of your way.</h2>
             <p>
-              RecipeTable uses structured recipe data first, private browser OCR
+              Recipe Wizard uses structured recipe data first, private browser OCR
               second, and an open model only when the ingredient flow is genuinely
               ambiguous.
             </p>
@@ -450,7 +450,7 @@ export default function App() {
             <i />
             <i />
           </span>
-          <span>RecipeTable</span>
+          <span>Recipe Wizard</span>
         </div>
         <p>Recipes made clear. Your kitchen, your data.</p>
         <span>Built with open tools.</span>

@@ -35,8 +35,8 @@ export default defineConfig({
         skipWaiting: true
       },
       manifest: {
-        name: "RecipeTable",
-        short_name: "RecipeTable",
+        name: "Recipe Wizard",
+        short_name: "Recipe Wizard",
         description: "Turn any recipe into a visual cooking flow.",
         theme_color: "#f4f0e8",
         background_color: "#f4f0e8",
